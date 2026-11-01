@@ -43,7 +43,7 @@ class NowPlayingScreen extends StatelessWidget {
                       fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
               Text(item.artist ?? '',
-                  style: const TextStyle(color: Colors.white54)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 24),
               StreamBuilder(
                 stream: svc.progress,
@@ -77,7 +77,7 @@ class NowPlayingScreen extends StatelessWidget {
                     icon: Icon(Icons.shuffle,
                         color: (s.data ?? false)
                             ? Theme.of(context).colorScheme.primary
-                            : Colors.white54),
+                            : Theme.of(context).colorScheme.onSurfaceVariant),
                     onPressed: () async {
                       final on = !(s.data ?? false);
                       if (on) await p.shuffle();
@@ -112,7 +112,7 @@ class NowPlayingScreen extends StatelessWidget {
                       icon: Icon(
                           m == LoopMode.one ? Icons.repeat_one : Icons.repeat,
                           color: m == LoopMode.off
-                              ? Colors.white54
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
                               : Theme.of(context).colorScheme.primary),
                       onPressed: () =>
                           p.setLoopMode(LoopMode.values[(m.index + 1) % 3]),

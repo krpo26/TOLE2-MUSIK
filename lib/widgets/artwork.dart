@@ -12,9 +12,9 @@ class Artwork extends StatelessWidget {
     final fallback = Container(
       width: size,
       height: size,
-      color: Colors.white10,
+      color: Theme.of(context).colorScheme.onSurface.withAlpha(25),
       child: Icon(local ? Icons.music_note : Icons.cloud_outlined,
-          size: size * .5, color: Colors.white54),
+          size: size * .5, color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
     if (!local || localId == null) {
       return ClipRRect(borderRadius: BorderRadius.circular(8), child: fallback);

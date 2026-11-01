@@ -19,7 +19,7 @@ class MiniPlayer extends StatelessWidget {
           onTap: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const NowPlayingScreen())),
           child: Container(
-            color: const Color(0xFF1E1E1E),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
             padding: const EdgeInsets.all(8),
             child: Row(children: [
               Artwork(
@@ -35,8 +35,7 @@ class MiniPlayer extends StatelessWidget {
                       Text(item.artist ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white54, fontSize: 12)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                     ]),
               ),
               StreamBuilder<PlayerState>(
