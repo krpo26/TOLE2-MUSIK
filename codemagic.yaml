@@ -14,8 +14,10 @@ workflows:
           python3 tools/patch_android.py
       - name: Dependencias
         script: flutter pub get
+      - name: Parchar plugins viejos (namespace)
+        script: python3 tools/patch_plugins.py
       - name: Compilar APK
-        script: flutter build apk --release
+        script: flutter build apk --release --no-tree-shake-icons
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
     publishing:
