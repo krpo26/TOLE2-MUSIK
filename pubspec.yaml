@@ -1,0 +1,28 @@
+name: audio_player
+description: Reproductor de audio local y en la nube
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  just_audio: ^0.10.4
+  just_audio_background: ^0.0.1-beta.17
+  rxdart: ^0.28.0
+  on_audio_query: ^2.9.0
+  permission_handler: ^11.3.1
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.2
+  file_picker: ^8.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
