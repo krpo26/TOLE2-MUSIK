@@ -23,8 +23,8 @@ for pkg in cfg["packages"]:
         g = re.sub(r"(\n\s*android\s*\{)", r'\1\n    namespace "%s"' % m.group(1), g, count=1)
 
     # SDK
-    g = re.sub(r"compileSdkVersion\s+\d+", "compileSdkVersion 35", g)
-    g = re.sub(r"compileSdk\s*=?\s*\d+", "compileSdk 35", g)
+    g = re.sub(r"compileSdkVersion\s+\d+", "compileSdkVersion 36", g)
+    g = re.sub(r"compileSdk\s*=?\s*\d+", "compileSdk 36", g)
 
     if old_plugin:
         # Java y Kotlin al mismo JVM target
