@@ -31,7 +31,7 @@ if "READ_MEDIA_AUDIO" not in s:
     s = s.replace("</application>", svc, 1)
     if "xmlns:tools" not in s:
         s = s.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
-    s = re.sub(r'android:label="[^"]*"', 'android:label="Mi Reproductor"', s, count=1)
+    s = re.sub(r'android:label="[^"]*"', 'android:label="TOLE2"', s, count=1)
     open(mf, "w", encoding="utf-8").write(s)
 
 # 2) MainActivity -> AudioServiceActivity
@@ -50,4 +50,15 @@ for f in glob.glob("android/app/build.gradle*"):
     t = re.sub(r"minSdk(Version)?\s*=?\s*flutter\.minSdkVersion",
                "minSdk = 24" if kts else "minSdkVersion 24", t)
     open(f, "w", encoding="utf-8").write(t)
+# 4) Ícono de la app (TOLE2) y nombre aunque el manifest ya tuviera permisos
+import shutil, os
+s2 = open(mf, encoding="utf-8").read()
+s2 = re.sub(r'android:label="[^"]*"', 'android:label="TOLE2"', s2, count=1)
+open(mf, "w", encoding="utf-8").write(s2)
+for d in glob.glob("tools/icons/mipmap-*"):
+    dst = os.path.join("android/app/src/main/res", os.path.basename(d))
+    os.makedirs(dst, exist_ok=True)
+    shutil.copy(os.path.join(d, "ic_launcher.png"), os.path.join(dst, "ic_launcher.png"))
+for f in glob.glob("android/app/src/main/res/mipmap-anydpi*/ic_launcher*.xml"):
+    os.remove(f)
 print("Android parcheado")

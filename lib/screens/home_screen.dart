@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../app_init.dart';
 import '../models/track.dart';
 import '../services/library_service.dart';
 import '../services/player_service.dart';
@@ -17,7 +18,7 @@ class HomeScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Mi Reproductor'),
+          title: const Text('TOLE2'),
           actions: [
             IconButton(
               icon: const Icon(Icons.palette_outlined),
@@ -28,6 +29,7 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         body: Column(children: [
+          const _InitWarning(),
           ListenableBuilder(
             listenable: s,
             builder: (_, __) {
@@ -111,7 +113,14 @@ class _TrackList extends StatelessWidget {
                 trailing: IconButton(
                   icon: Icon(isFav ? Icons.favorite : Icons.favorite_border,
                       color: isFav ? Colors.redAccent : null),
-                  onPressed: () => LibraryService.toggleFavorite(t, isFav),
+                  onPressed: () async {
+                    final m = ScaffoldMessenger.of(context);
+                    final ok = await LibraryService.toggleFavorite(t, isFav);
+                    if (!ok) {
+                      m.showSnackBar(const SnackBar(
+                          content: Text('Favoritos necesita la nube configurada')));
+                    }
+                  },
                 ),
                 onTap: () => PlayerService.instance.playList(tracks, i),
               );
@@ -165,7 +174,20 @@ class _LocalTabState extends State<_LocalTab>
 class _CloudTab extends StatelessWidget {
   const _CloudTab();
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    if (!LibraryService.cloudReady) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('Nube no configurada.\nCompleta firebase_options.dart para usarla.',
+              textAlign: TextAlign.center),
+        ),
+      );
+    }
+    return _cloudBody(context);
+  }
+
+  Widget _cloudBody(BuildContext context) => Scaffold(
         backgroundColor: Colors.transparent,
         body: StreamBuilder<List<Track>>(
           stream: LibraryService.cloudTracks(),
@@ -198,5 +220,35 @@ class _FavsTab extends StatelessWidget {
         builder: (_, s) => s.hasData
             ? _TrackList(s.data!)
             : const Center(child: CircularProgressIndicator()),
+      );
+}
+
+class _InitWarning extends StatefulWidget {
+  const _InitWarning();
+  @override
+  State<_InitWarning> createState() => _InitWarningState();
+}
+
+class _InitWarningState extends State<_InitWarning> {
+  bool _closed = false;
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<String?>(
+        valueListenable: AppInit.warning,
+        builder: (_, msg, __) {
+          if (msg == null || _closed) return const SizedBox.shrink();
+          return Container(
+            width: double.infinity,
+            color: Theme.of(context).colorScheme.errorContainer,
+            padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+            child: Row(children: [
+              const Icon(Icons.info_outline, size: 18),
+              const SizedBox(width: 8),
+              Expanded(child: Text(msg, style: const TextStyle(fontSize: 12))),
+              IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => setState(() => _closed = true)),
+            ]),
+          );
+        },
       );
 }

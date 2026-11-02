@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -9,8 +10,12 @@ import '../models/track.dart';
 
 class LibraryService {
   static final _query = OnAudioQuery();
-  static final _db = FirebaseFirestore.instance;
+  static FirebaseFirestore get _db => FirebaseFirestore.instance;
   static String get _uid => FirebaseAuth.instance.currentUser!.uid;
+
+  /// true solo si Firebase se inicializó y hay sesión anónima.
+  static bool get cloudReady =>
+      Firebase.apps.isNotEmpty && FirebaseAuth.instance.currentUser != null;
 
   // ---------- Dispositivo ----------
   static Future<bool> ensurePermission() async {
@@ -41,15 +46,19 @@ class LibraryService {
   }
 
   // ---------- Nube ----------
-  static Stream<List<Track>> cloudTracks() => _db
-      .collection('tracks')
-      .orderBy('uploadedAt', descending: true)
-      .snapshots()
-      .map((q) => q.docs
-          .map((d) => Track.fromMap({...d.data(), 'id': d.id}))
-          .toList());
+  static Stream<List<Track>> cloudTracks() {
+    if (!cloudReady) return Stream.value(<Track>[]);
+    return _db
+        .collection('tracks')
+        .orderBy('uploadedAt', descending: true)
+        .snapshots()
+        .map((q) => q.docs
+            .map((d) => Track.fromMap({...d.data(), 'id': d.id}))
+            .toList());
+  }
 
   static Future<void> uploadAudio() async {
+    if (!cloudReady) throw Exception('La nube no está configurada');
     final res = await FilePicker.platform.pickFiles(type: FileType.audio);
     if (res == null || res.files.single.path == null) return;
     final f = res.files.single;
@@ -71,15 +80,27 @@ class LibraryService {
   static CollectionReference<Map<String, dynamic>> get _favs =>
       _db.collection('users').doc(_uid).collection('favorites');
 
-  static Stream<List<Track>> favorites() => _favs
-      .snapshots()
-      .map((q) => q.docs.map((d) => Track.fromMap(d.data())).toList());
+  static Stream<List<Track>> favorites() {
+    if (!cloudReady) return Stream.value(<Track>[]);
+    return _favs
+        .snapshots()
+        .map((q) => q.docs.map((d) => Track.fromMap(d.data())).toList());
+  }
 
-  static Stream<Set<String>> favoriteIds() =>
-      _favs.snapshots().map((q) => q.docs.map((d) => d.id).toSet());
+  static Stream<Set<String>> favoriteIds() {
+    if (!cloudReady) return Stream.value(<String>{});
+    return _favs.snapshots().map((q) => q.docs.map((d) => d.id).toSet());
+  }
 
-  static Future<void> toggleFavorite(Track t, bool isFav) async {
-    final doc = _favs.doc(t.id);
-    isFav ? await doc.delete() : await doc.set(t.toMap());
+  /// Devuelve false si no se pudo (nube no disponible).
+  static Future<bool> toggleFavorite(Track t, bool isFav) async {
+    if (!cloudReady) return false;
+    try {
+      final doc = _favs.doc(t.id);
+      isFav ? await doc.delete() : await doc.set(t.toMap());
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
