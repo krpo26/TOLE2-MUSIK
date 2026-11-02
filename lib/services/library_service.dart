@@ -11,7 +11,6 @@ import '../models/track.dart';
 class LibraryService {
   static final _query = OnAudioQuery();
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
-  static String get _uid => FirebaseAuth.instance.currentUser!.uid;
 
   /// true solo si Firebase se inicializó y hay sesión anónima.
   static bool get cloudReady =>
@@ -30,15 +29,19 @@ class LibraryService {
       uriType: UriType.EXTERNAL,
       ignoreCase: true,
     );
+    String clean(String? v) =>
+        (v == null || v.isEmpty || v == '<unknown>') ? 'Desconocido' : v;
     return songs
         .where((s) => s.isMusic == true && s.uri != null)
         .map((s) => Track(
               id: 'local_${s.id}',
               title: s.title,
-              artist: (s.artist == null || s.artist == '<unknown>')
-                  ? 'Desconocido'
-                  : s.artist!,
+              artist: clean(s.artist),
+              album: clean(s.album),
               uri: s.uri!,
+              path: s.data,
+              durationMs: s.duration ?? 0,
+              dateAdded: s.dateAdded ?? 0,
               local: true,
               localId: s.id,
             ))
@@ -74,33 +77,5 @@ class LibraryService {
       'local': false,
       'uploadedAt': FieldValue.serverTimestamp(),
     });
-  }
-
-  // ---------- Favoritos (sincronizados por usuario) ----------
-  static CollectionReference<Map<String, dynamic>> get _favs =>
-      _db.collection('users').doc(_uid).collection('favorites');
-
-  static Stream<List<Track>> favorites() {
-    if (!cloudReady) return Stream.value(<Track>[]);
-    return _favs
-        .snapshots()
-        .map((q) => q.docs.map((d) => Track.fromMap(d.data())).toList());
-  }
-
-  static Stream<Set<String>> favoriteIds() {
-    if (!cloudReady) return Stream.value(<String>{});
-    return _favs.snapshots().map((q) => q.docs.map((d) => d.id).toSet());
-  }
-
-  /// Devuelve false si no se pudo (nube no disponible).
-  static Future<bool> toggleFavorite(Track t, bool isFav) async {
-    if (!cloudReady) return false;
-    try {
-      final doc = _favs.doc(t.id);
-      isFav ? await doc.delete() : await doc.set(t.toMap());
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 }

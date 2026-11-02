@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
+import 'services/local_store.dart';
 import 'services/settings_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await SettingsService.instance.load();
+  } catch (_) {}
+  try {
+    await LocalStore.instance.load();
   } catch (_) {}
   runApp(const PlayerApp());
 }
