@@ -10,7 +10,9 @@ import 'dialogs.dart';
 class TrackTile extends StatelessWidget {
   final Track track;
   final VoidCallback onTap;
-  const TrackTile({super.key, required this.track, required this.onTap});
+  final String? extra;
+  const TrackTile(
+      {super.key, required this.track, required this.onTap, this.extra});
 
   @override
   Widget build(BuildContext context) {
@@ -33,12 +35,15 @@ class TrackTile extends StatelessWidget {
                 ? TextStyle(color: cs.primary, fontWeight: FontWeight.bold)
                 : null,
           ),
-          subtitle: Text('${track.artist}$dur',
+          subtitle: Text('${track.artist}$dur${extra ?? ""}',
               maxLines: 1, overflow: TextOverflow.ellipsis),
-          trailing: IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () => showTrackOptions(context, track),
-          ),
+          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (playing) Icon(Icons.graphic_eq, color: cs.primary),
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () => showTrackOptions(context, track),
+            ),
+          ]),
           onTap: onTap,
           onLongPress: () => showTrackOptions(context, track),
         );

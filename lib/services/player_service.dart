@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
+import 'local_store.dart';
+import 'settings_service.dart';
 
 class PlayerService {
   PlayerService._();
@@ -18,6 +21,8 @@ class PlayerService {
   /// Reproduce una lista desde [index]. [shuffle]: null = no cambia el modo.
   Future<void> playList(List<Track> tracks, int index, {bool? shuffle}) async {
     if (tracks.isEmpty) return;
+    _userStarted = true;
+    _lastRecorded = null;
     try {
       await player.setAudioSources(
         tracks.map((t) => t.toSource()).toList(),
@@ -92,6 +97,124 @@ class PlayerService {
         }
       }
       await equalizer.setEnabled(enabled);
+    } catch (_) {}
+  }
+
+  // ---------- Efectos, historial y sesión ----------
+  /// Volumen general (modo Winamp). El fundido se aplica sobre este valor.
+  double master = 1.0;
+  void setMaster(double m) {
+    master = m.clamp(0.0, 1.0).toDouble();
+    player.setVolume(_lastVol * master);
+  }
+
+  bool _effectsStarted = false;
+  bool _userStarted = false;
+  double _lastVol = 1.0;
+  bool _lastSkip = false;
+  String? _lastRecorded;
+
+  void startEffects() {
+    if (_effectsStarted) return;
+    _effectsStarted = true;
+    final s = SettingsService.instance;
+
+    // Fundido de entrada y salida
+    player.positionStream.listen((pos) {
+      var v = 1.0;
+      final fade = s.fadeSeconds;
+      if (fade > 0 && player.playing) {
+        final f = fade * 1000;
+        final p = pos.inMilliseconds;
+        final dur = player.duration?.inMilliseconds ?? 0;
+        if (p < f) v = p / f;
+        if (dur > 0 && dur - p < f) v = min(v, (dur - p) / f);
+        v = v.clamp(0.0, 1.0).toDouble();
+      }
+      if ((v - _lastVol).abs() > 0.02 || (v == 1.0 && _lastVol != 1.0)) {
+        _lastVol = v;
+        player.setVolume(v * master);
+      }
+    });
+
+    // Saltar silencios
+    void applySkip() {
+      if (s.skipSilence != _lastSkip) {
+        _lastSkip = s.skipSilence;
+        player.setSkipSilenceEnabled(s.skipSilence).catchError((_) {});
+      }
+    }
+
+    s.addListener(applySkip);
+    applySkip();
+
+    // Historial y recordar la sesión
+    player.currentIndexStream.listen((_) {
+      _saveSession();
+      _maybeRecord();
+    });
+    player.playingStream.listen((playing) {
+      if (!playing) _saveSession();
+      _maybeRecord();
+    });
+    Timer.periodic(const Duration(seconds: 15), (_) {
+      if (player.playing) _saveSession();
+    });
+  }
+
+  void _maybeRecord() {
+    if (!player.playing) return;
+    final i = player.currentIndex;
+    final seq = player.sequence;
+    if (i == null || i >= seq.length) return;
+    final t = Track.fromSource(seq[i]);
+    if (t == null || t.id == _lastRecorded) return;
+    _lastRecorded = t.id;
+    LocalStore.instance.recordPlay(t);
+  }
+
+  Future<void> _saveSession() async {
+    try {
+      final seq = player.sequence;
+      if (seq.isEmpty) return;
+      final ids = seq
+          .map((s) => s.tag is MediaItem ? (s.tag as MediaItem).id : '')
+          .toList();
+      final p = await SharedPreferences.getInstance();
+      await p.setStringList('last_ids', ids);
+      await p.setInt('last_index', player.currentIndex ?? 0);
+      await p.setInt('last_pos', player.position.inMilliseconds);
+    } catch (_) {}
+  }
+
+  bool _restored = false;
+
+  /// Deja lista (en pausa) la última cola, donde se quedó la reproducción.
+  Future<void> restoreLast(List<Track> library) async {
+    if (_restored) return;
+    _restored = true;
+    try {
+      if (_userStarted || player.sequence.isNotEmpty) return;
+      final p = await SharedPreferences.getInstance();
+      final ids = p.getStringList('last_ids');
+      if (ids == null || ids.isEmpty) return;
+      final byId = {for (final t in library) t.id: t};
+      final idx = p.getInt('last_index') ?? 0;
+      final cur = idx >= 0 && idx < ids.length ? ids[idx] : null;
+      final tracks = <Track>[
+        for (final id in ids)
+          if (byId[id] != null) byId[id]!
+      ];
+      if (tracks.isEmpty) return;
+      var start = cur == null ? 0 : tracks.indexWhere((t) => t.id == cur);
+      if (start < 0) start = 0;
+      if (_userStarted) return;
+      await player.setAudioSources(
+        tracks.map((t) => t.toSource()).toList(),
+        initialIndex: start,
+        initialPosition: Duration(milliseconds: p.getInt('last_pos') ?? 0),
+      );
+      unawaited(_restoreEq());
     } catch (_) {}
   }
 

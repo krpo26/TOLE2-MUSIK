@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
+import '../widgets/backup_card.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -118,6 +119,48 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Se muestran en orden y se repiten'),
             onTap: s.addBanner,
           ),
+          _section('Reproducción'),
+          ListTile(
+            title: Text(s.fadeSeconds == 0
+                ? 'Fundido de entrada y salida: desactivado'
+                : 'Fundido de entrada y salida: ${s.fadeSeconds} s'),
+            subtitle: Slider(
+              min: 0,
+              max: 8,
+              divisions: 8,
+              value: s.fadeSeconds.toDouble(),
+              label: '${s.fadeSeconds} s',
+              onChanged: (v) => s.setFade(v.round()),
+            ),
+          ),
+          SwitchListTile(
+            title: const Text('Saltar silencios'),
+            subtitle: const Text('Se salta los tramos mudos de las pistas'),
+            value: s.skipSilence,
+            onChanged: s.setSkipSilence,
+          ),
+          SwitchListTile(
+            title: const Text('Barra de onda en "Reproduciendo"'),
+            value: s.waveformSeek,
+            onChanged: s.setWaveform,
+          ),
+          _section('Respaldo en la nube'),
+          const BackupCard(),
+          _section('Carpetas ocultas'),
+          if (s.hiddenFolders.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                  'Ninguna. Mantén presionada una carpeta en la pestaña Carpetas para ocultarla.',
+                  style: TextStyle(fontSize: 12)),
+            ),
+          for (final h in s.hiddenFolders)
+            ListTile(
+              leading: const Icon(Icons.visibility_off),
+              title: Text(h, maxLines: 2, overflow: TextOverflow.ellipsis),
+              trailing: TextButton(
+                  onPressed: () => s.unhideFolder(h), child: const Text('Mostrar')),
+            ),
           const SizedBox(height: 32),
         ]),
       ),

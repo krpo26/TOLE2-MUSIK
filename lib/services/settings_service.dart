@@ -33,6 +33,12 @@ class SettingsService extends ChangeNotifier {
   List<String> banners = [];
   int bannerEvery = 8;
   bool showBanners = true;
+  int fadeSeconds = 0;
+  bool skipSilence = false;
+  bool waveformSeek = true;
+  int winampSkin = 0;
+  String backupCode = '';
+  List<String> hiddenFolders = [];
 
   Future<void> load() async {
     _p = await SharedPreferences.getInstance();
@@ -45,6 +51,12 @@ class SettingsService extends ChangeNotifier {
         .toList();
     bannerEvery = _p.getInt('bannerEvery') ?? 8;
     showBanners = _p.getBool('showBanners') ?? true;
+    fadeSeconds = _p.getInt('fadeSeconds') ?? 0;
+    skipSilence = _p.getBool('skipSilence') ?? false;
+    waveformSeek = _p.getBool('waveformSeek') ?? true;
+    winampSkin = _p.getInt('winampSkin') ?? 0;
+    backupCode = _p.getString('backupCode') ?? '';
+    hiddenFolders = _p.getStringList('hiddenFolders') ?? [];
   }
 
   String? _existing(String? p) => (p != null && File(p).existsSync()) ? p : null;
@@ -76,6 +88,12 @@ class SettingsService extends ChangeNotifier {
     await _p.setStringList('banners', banners);
     await _p.setInt('bannerEvery', bannerEvery);
     await _p.setBool('showBanners', showBanners);
+    await _p.setInt('fadeSeconds', fadeSeconds);
+    await _p.setBool('skipSilence', skipSilence);
+    await _p.setBool('waveformSeek', waveformSeek);
+    await _p.setInt('winampSkin', winampSkin);
+    await _p.setString('backupCode', backupCode);
+    await _p.setStringList('hiddenFolders', hiddenFolders);
     notifyListeners();
   }
 
@@ -83,6 +101,22 @@ class SettingsService extends ChangeNotifier {
   Future<void> setStyle(ThemeStyle s) async { style = s; await _save(); }
   Future<void> setBannerEvery(int n) async { bannerEvery = n; await _save(); }
   Future<void> setShowBanners(bool v) async { showBanners = v; await _save(); }
+
+  Future<void> setFade(int s) async { fadeSeconds = s; await _save(); }
+  Future<void> setSkipSilence(bool v) async { skipSilence = v; await _save(); }
+  Future<void> setWaveform(bool v) async { waveformSeek = v; await _save(); }
+  Future<void> setWinampSkin(int v) async { winampSkin = v; await _save(); }
+  Future<void> setBackupCode(String v) async { backupCode = v; await _save(); }
+  Future<void> hideFolder(String path) async {
+    if (!hiddenFolders.contains(path)) {
+      hiddenFolders = [...hiddenFolders, path];
+      await _save();
+    }
+  }
+  Future<void> unhideFolder(String path) async {
+    hiddenFolders = hiddenFolders.where((x) => x != path).toList();
+    await _save();
+  }
 
   /// Elige una imagen de la galería y la copia a la carpeta de la app.
   Future<String?> _pick(String kind) async {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/track.dart';
+import '../services/settings_service.dart';
+import '../widgets/dialogs.dart';
 import '../services/local_library.dart';
 import '../services/player_service.dart';
 import '../widgets/mini_player.dart';
@@ -52,6 +54,12 @@ class FolderView extends StatelessWidget {
             leading: Icon(Icons.folder, color: primary, size: 36),
             title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text('${counts[name]} canciones'),
+            onLongPress: () async {
+              if (await confirm(context,
+                  '¿Ocultar la carpeta "$name"? Podrás mostrarla de nuevo en Personalizar.')) {
+                SettingsService.instance.hideFolder('$prefix$name');
+              }
+            },
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(
               context,
@@ -81,7 +89,17 @@ class FolderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: Text(title ?? baseName(path))),
-        body: FolderView(path: path, all: all),
+        body: ListenableBuilder(
+          listenable: SettingsService.instance,
+          builder: (_, __) {
+            final h = SettingsService.instance.hiddenFolders;
+            final vis = all
+                .where((t) =>
+                    !h.any((x) => t.folder == x || t.folder.startsWith('$x/')))
+                .toList();
+            return FolderView(path: path, all: vis);
+          },
+        ),
         bottomNavigationBar: const SafeArea(child: MiniPlayer()),
       );
 }

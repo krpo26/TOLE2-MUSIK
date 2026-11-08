@@ -74,7 +74,7 @@ class Track {
           album: album.isEmpty ? null : album,
           duration:
               durationMs > 0 ? Duration(milliseconds: durationMs) : null,
-          extras: {'local': local, 'localId': localId},
+          extras: {'local': local, 'localId': localId, 'path': path},
         ),
       );
 
@@ -89,6 +89,7 @@ class Track {
       uri: src.uri.toString(),
       album: tag.album ?? '',
       durationMs: tag.duration?.inMilliseconds ?? 0,
+      path: tag.extras?['path'] as String?,
       local: tag.extras?['local'] == true,
       localId: (tag.extras?['localId'] as num?)?.toInt(),
     );

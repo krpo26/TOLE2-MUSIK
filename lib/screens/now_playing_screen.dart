@@ -5,6 +5,9 @@ import 'package:just_audio_background/just_audio_background.dart';
 import '../models/track.dart';
 import '../services/local_store.dart';
 import '../services/player_service.dart';
+import '../services/settings_service.dart';
+import '../widgets/wave_seek_bar.dart';
+import 'lyrics_screen.dart';
 import '../widgets/artwork.dart';
 import 'equalizer_screen.dart';
 import 'queue_screen.dart';
@@ -126,14 +129,26 @@ class NowPlayingScreen extends StatelessWidget {
                   final pos = s.data?.pos ?? Duration.zero;
                   final dur = s.data?.dur ?? Duration.zero;
                   final max = dur.inMilliseconds.toDouble();
+                  final frac = max > 0
+                      ? (pos.inMilliseconds / max).clamp(0.0, 1.0).toDouble()
+                      : 0.0;
                   return Column(children: [
-                    Slider(
-                      value: pos.inMilliseconds
-                          .toDouble()
-                          .clamp(0, max > 0 ? max : 1),
-                      max: max > 0 ? max : 1,
-                      onChanged: (v) => p.seek(Duration(milliseconds: v.round())),
-                    ),
+                    if (SettingsService.instance.waveformSeek)
+                      WaveSeekBar(
+                        progress: frac,
+                        seed: item.id,
+                        onSeek: (f) =>
+                            p.seek(Duration(milliseconds: (f * max).round())),
+                      )
+                    else
+                      Slider(
+                        value: pos.inMilliseconds
+                            .toDouble()
+                            .clamp(0, max > 0 ? max : 1),
+                        max: max > 0 ? max : 1,
+                        onChanged: (v) =>
+                            p.seek(Duration(milliseconds: v.round())),
+                      ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
@@ -194,6 +209,14 @@ class NowPlayingScreen extends StatelessWidget {
               ]),
               const SizedBox(height: 8),
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                IconButton(
+                  tooltip: 'Letra',
+                  icon: const Icon(Icons.lyrics),
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const LyricsScreen())),
+                ),
                 IconButton(
                   tooltip: 'Ecualizador',
                   icon: const Icon(Icons.equalizer),

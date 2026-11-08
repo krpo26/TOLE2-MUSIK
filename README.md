@@ -20,6 +20,7 @@ service cloud.firestore {
   match /databases/{db}/documents {
     match /tracks/{id} { allow read, write: if request.auth != null; }
     match /users/{uid}/favorites/{id} { allow read, write: if request.auth.uid == uid; }
+    match /backups/{id} { allow read, write: if request.auth != null; }
   }
 }
 ```

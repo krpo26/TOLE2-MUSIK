@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../app_init.dart';
 import '../services/local_library.dart';
+import '../services/player_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/mini_player.dart';
 import 'albums_screen.dart';
 import 'cloud_tab.dart';
+import 'dj_screen.dart';
+import 'winamp_screen.dart';
 import 'equalizer_screen.dart';
 import 'folders_screen.dart';
+import 'history_screen.dart';
 import 'playlists_screen.dart';
 import 'settings_screen.dart';
 import 'songs_tab.dart';
@@ -23,7 +27,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    LocalLibrary.instance.load();
+    PlayerService.instance.startEffects();
+    LocalLibrary.instance.load().then((_) {
+      PlayerService.instance.restoreLast(LocalLibrary.instance.tracks);
+    });
     // Permite mostrar los controles en la notificación (Android 13+).
     Permission.notification.request();
   }
@@ -32,11 +39,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final s = SettingsService.instance;
     return DefaultTabController(
-      length: 7,
+      length: 8,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('TOLE2'),
           actions: [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'Modos',
+              onSelected: (v) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        v == 'winamp' ? const WinampScreen() : const DjScreen()),
+              ),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'winamp', child: Text('Modo Winamp')),
+                PopupMenuItem(value: 'dj', child: Text('DJ virtual')),
+              ],
+            ),
             IconButton(
               icon: const Icon(Icons.equalizer),
               tooltip: 'Ecualizador',
@@ -77,6 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Tab(icon: Icon(Icons.person), text: 'Artistas'),
               Tab(icon: Icon(Icons.queue_music), text: 'Listas'),
               Tab(icon: Icon(Icons.favorite), text: 'Favoritos'),
+              Tab(icon: Icon(Icons.history), text: 'Historial'),
               Tab(icon: Icon(Icons.cloud), text: 'Nube'),
             ],
           ),
@@ -88,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ArtistsTab(),
               PlaylistsTab(),
               FavoritesTab(),
+              HistoryTab(),
               CloudTab(),
             ]),
           ),
