@@ -17,7 +17,10 @@ class AppInit {
       await JustAudioBackground.init(
         androidNotificationChannelId: 'com.example.audio_player.channel.audio',
         androidNotificationChannelName: 'Reproducción de audio',
-        androidNotificationOngoing: true,
+        // El servicio sigue activo también en pausa: así Android no lo cierra
+        // y la notificación con controles se mantiene.
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: false,
       ).timeout(const Duration(seconds: 8));
     } catch (e) {
       msgs.add('Audio en segundo plano no disponible: $e');

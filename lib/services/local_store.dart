@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import 'local_library.dart';
 
-/// Favoritos y listas de reproducción guardados en el celular.
+/// Favoritos, listas de reproducción e historial guardados en el celular.
 class LocalStore extends ChangeNotifier {
   LocalStore._();
   static final instance = LocalStore._();
@@ -76,6 +76,7 @@ class LocalStore extends ChangeNotifier {
     await _save();
   }
 
+  // ---------- Historial ----------
   void _loadHistory() {
     final pl = _p.getString('played');
     if (pl != null) {
@@ -129,7 +130,8 @@ class LocalStore extends ChangeNotifier {
     await _saveHistory();
   }
 
-  /// Datos para el respaldo en la nube (solo lo esencial, para que sea liviano).
+  // ---------- Respaldo en la nube ----------
+  /// Datos para el respaldo (solo lo esencial, para que sea liviano).
   Map<String, dynamic> exportData() {
     final keep = <String>{..._recentIds, ...topTracks.map((t) => t.id)};
     return {

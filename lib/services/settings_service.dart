@@ -38,6 +38,8 @@ class SettingsService extends ChangeNotifier {
   bool waveformSeek = true;
   int winampSkin = 0;
   String backupCode = '';
+  bool hideWhatsapp = true;
+  bool batteryAsked = false;
   List<String> hiddenFolders = [];
 
   Future<void> load() async {
@@ -56,6 +58,8 @@ class SettingsService extends ChangeNotifier {
     waveformSeek = _p.getBool('waveformSeek') ?? true;
     winampSkin = _p.getInt('winampSkin') ?? 0;
     backupCode = _p.getString('backupCode') ?? '';
+    hideWhatsapp = _p.getBool('hideWhatsapp') ?? true;
+    batteryAsked = _p.getBool('batteryAsked') ?? false;
     hiddenFolders = _p.getStringList('hiddenFolders') ?? [];
   }
 
@@ -93,6 +97,8 @@ class SettingsService extends ChangeNotifier {
     await _p.setBool('waveformSeek', waveformSeek);
     await _p.setInt('winampSkin', winampSkin);
     await _p.setString('backupCode', backupCode);
+    await _p.setBool('hideWhatsapp', hideWhatsapp);
+    await _p.setBool('batteryAsked', batteryAsked);
     await _p.setStringList('hiddenFolders', hiddenFolders);
     notifyListeners();
   }
@@ -101,12 +107,13 @@ class SettingsService extends ChangeNotifier {
   Future<void> setStyle(ThemeStyle s) async { style = s; await _save(); }
   Future<void> setBannerEvery(int n) async { bannerEvery = n; await _save(); }
   Future<void> setShowBanners(bool v) async { showBanners = v; await _save(); }
-
   Future<void> setFade(int s) async { fadeSeconds = s; await _save(); }
   Future<void> setSkipSilence(bool v) async { skipSilence = v; await _save(); }
   Future<void> setWaveform(bool v) async { waveformSeek = v; await _save(); }
   Future<void> setWinampSkin(int v) async { winampSkin = v; await _save(); }
   Future<void> setBackupCode(String v) async { backupCode = v; await _save(); }
+  Future<void> setHideWhatsapp(bool v) async { hideWhatsapp = v; await _save(); }
+  Future<void> setBatteryAsked(bool v) async { batteryAsked = v; await _save(); }
   Future<void> hideFolder(String path) async {
     if (!hiddenFolders.contains(path)) {
       hiddenFolders = [...hiddenFolders, path];

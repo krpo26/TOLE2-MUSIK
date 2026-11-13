@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/settings_service.dart';
 import '../widgets/backup_card.dart';
 
@@ -143,6 +144,25 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Barra de onda en "Reproduciendo"'),
             value: s.waveformSeek,
             onChanged: s.setWaveform,
+          ),
+          SwitchListTile(
+            title: const Text('Ocultar audios de WhatsApp'),
+            subtitle: const Text('No aparecen en la biblioteca ni se reproducen'),
+            value: s.hideWhatsapp,
+            onChanged: s.setHideWhatsapp,
+          ),
+          _section('Segundo plano'),
+          ListTile(
+            leading: const Icon(Icons.battery_saver),
+            title: const Text('Evitar que Android corte la música'),
+            subtitle: const Text('Permite que TOLE2 ignore el ahorro de batería'),
+            onTap: () => Permission.ignoreBatteryOptimizations.request(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications_active),
+            title: const Text('Notificación con controles'),
+            subtitle: const Text('Abre los ajustes de la app para permitir notificaciones'),
+            onTap: openAppSettings,
           ),
           _section('Respaldo en la nube'),
           const BackupCard(),

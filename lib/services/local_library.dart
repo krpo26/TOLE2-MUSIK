@@ -14,23 +14,32 @@ class LocalLibrary extends ChangeNotifier {
   List<Track> tracks = [];
   String _hiddenKey = '';
 
+  String _key() {
+    final s = SettingsService.instance;
+    return "${s.hiddenFolders.join("|")}#${s.hideWhatsapp}";
+  }
+
   void _applyFilter() {
-    final h = SettingsService.instance.hiddenFolders;
-    _hiddenKey = h.join('|');
-    tracks = h.isEmpty
-        ? List<Track>.from(_all)
-        : _all.where((t) {
-            final f = t.folder;
-            return !h.any((x) => f == x || f.startsWith('$x/'));
-          }).toList();
+    final s = SettingsService.instance;
+    final h = s.hiddenFolders;
+    final wa = s.hideWhatsapp;
+    _hiddenKey = _key();
+    bool hidden(Track t) {
+      if (wa && (t.path ?? '').toLowerCase().contains('whatsapp')) return true;
+      final f = t.folder;
+      return h.any((x) => f == x || f.startsWith('$x/'));
+    }
+
+    tracks = _all.where((t) => !hidden(t)).toList();
   }
 
   void _onSettings() {
-    if (SettingsService.instance.hiddenFolders.join('|') != _hiddenKey) {
+    if (_key() != _hiddenKey) {
       _applyFilter();
       notifyListeners();
     }
   }
+
   bool loading = false, loaded = false, denied = false;
   String? error;
 

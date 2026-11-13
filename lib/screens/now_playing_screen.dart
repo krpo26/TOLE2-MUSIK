@@ -6,10 +6,10 @@ import '../models/track.dart';
 import '../services/local_store.dart';
 import '../services/player_service.dart';
 import '../services/settings_service.dart';
-import '../widgets/wave_seek_bar.dart';
-import 'lyrics_screen.dart';
 import '../widgets/artwork.dart';
+import '../widgets/wave_seek_bar.dart';
 import 'equalizer_screen.dart';
+import 'lyrics_screen.dart';
 import 'queue_screen.dart';
 
 class NowPlayingScreen extends StatelessWidget {

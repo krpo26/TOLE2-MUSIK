@@ -18,8 +18,10 @@ class LibraryService {
 
   // ---------- Dispositivo ----------
   static Future<bool> ensurePermission() async {
-    final audio = await Permission.audio.request();
-    if (audio.isGranted) return true;
+    // Se piden juntos (audio + notificaciones): dos solicitudes separadas
+    // provocan "ya hay una solicitud en curso" y la notificación nunca se habilitaba.
+    final res = await [Permission.audio, Permission.notification].request();
+    if (res[Permission.audio]?.isGranted == true) return true;
     return (await Permission.storage.request()).isGranted;
   }
 

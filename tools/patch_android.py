@@ -1,5 +1,5 @@
 """Ajusta el proyecto Android generado por `flutter create` (idempotente)."""
-import glob, re
+import glob, re, os, shutil
 
 # 1) Manifest: permisos + servicio de audio en segundo plano
 mf = "android/app/src/main/AndroidManifest.xml"
@@ -12,6 +12,7 @@ if "READ_MEDIA_AUDIO" not in s:
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 """
     s = s.replace("<application", perms + "    <application", 1)
     svc = """        <service android:name="com.ryanheise.audioservice.AudioService"
@@ -31,7 +32,6 @@ if "READ_MEDIA_AUDIO" not in s:
     s = s.replace("</application>", svc, 1)
     if "xmlns:tools" not in s:
         s = s.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
-    s = re.sub(r'android:label="[^"]*"', 'android:label="TOLE2"', s, count=1)
     open(mf, "w", encoding="utf-8").write(s)
 
 # 2) MainActivity -> AudioServiceActivity
@@ -50,8 +50,8 @@ for f in glob.glob("android/app/build.gradle*"):
     t = re.sub(r"minSdk(Version)?\s*=?\s*flutter\.minSdkVersion",
                "minSdk = 24" if kts else "minSdkVersion 24", t)
     open(f, "w", encoding="utf-8").write(t)
-# 4) Ícono de la app (TOLE2) y nombre aunque el manifest ya tuviera permisos
-import shutil, os
+
+# 4) Nombre TOLE2 e ícono de la app
 s2 = open(mf, encoding="utf-8").read()
 s2 = re.sub(r'android:label="[^"]*"', 'android:label="TOLE2"', s2, count=1)
 open(mf, "w", encoding="utf-8").write(s2)

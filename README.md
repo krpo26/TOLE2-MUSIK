@@ -1,19 +1,17 @@
-# Mi Reproductor (Flutter)
+# TOLE2 (Flutter)
 
-Reproduce audios del celular (como Poweramp) y de la nube (Firebase). Favoritos sincronizados.
+Reproductor de audio del celular y de la nube (Firebase), estilo Poweramp, con modo Winamp y DJ virtual.
 
 ## Pasos, todo desde la nube
-1. **GitHub**: crear repo nuevo, subir todo este contenido (Add file > Upload files).
+1. **GitHub**: subir todo este contenido (Add file > Upload files).
 2. **Firebase** (console.firebase.google.com):
    - Crear proyecto. Agregar app Android con paquete `com.example.audio_player`.
    - Authentication > Sign-in method > activar **Anónimo**.
-   - Firestore Database > crear (modo prueba para empezar).
-   - Storage > comenzar (modo prueba para empezar).
+   - Firestore Database y Storage (modo prueba para empezar).
    - Copiar apiKey, appId, senderId, projectId a `lib/firebase_options.dart`.
-3. **Codemagic**: conectar el repo de GitHub, elegir `codemagic.yaml`, cambiar el correo y ejecutar el build. El APK llega por mail y queda en Artifacts.
+3. **Codemagic**: conectar el repo, usar `codemagic.yaml`, cambiar el correo y ejecutar el build.
 
-## Reglas de seguridad sugeridas (después de probar)
-Firestore:
+## Reglas sugeridas de Firestore
 ```
 rules_version = '2';
 service cloud.firestore {

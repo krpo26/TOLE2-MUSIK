@@ -5,17 +5,18 @@ import '../app_init.dart';
 import '../services/local_library.dart';
 import '../services/player_service.dart';
 import '../services/settings_service.dart';
+import '../widgets/dialogs.dart';
 import '../widgets/mini_player.dart';
 import 'albums_screen.dart';
 import 'cloud_tab.dart';
 import 'dj_screen.dart';
-import 'winamp_screen.dart';
 import 'equalizer_screen.dart';
 import 'folders_screen.dart';
 import 'history_screen.dart';
 import 'playlists_screen.dart';
 import 'settings_screen.dart';
 import 'songs_tab.dart';
+import 'winamp_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,9 +31,19 @@ class _HomeScreenState extends State<HomeScreen> {
     PlayerService.instance.startEffects();
     LocalLibrary.instance.load().then((_) {
       PlayerService.instance.restoreLast(LocalLibrary.instance.tracks);
+      _askBattery();
     });
-    // Permite mostrar los controles en la notificación (Android 13+).
-    Permission.notification.request();
+  }
+
+  /// Una sola vez: pide ignorar el ahorro de batería para que Android no corte la música.
+  Future<void> _askBattery() async {
+    final s = SettingsService.instance;
+    if (s.batteryAsked || !mounted) return;
+    await s.setBatteryAsked(true);
+    if (!mounted) return;
+    final ok = await confirm(context,
+        'Para que la música no se corte con la pantalla apagada, permite que TOLE2 ignore el ahorro de batería. ¿Configurarlo ahora?');
+    if (ok) await Permission.ignoreBatteryOptimizations.request();
   }
 
   @override

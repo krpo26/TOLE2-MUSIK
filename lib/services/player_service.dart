@@ -13,6 +13,9 @@ class PlayerService {
   PlayerService._();
   static final instance = PlayerService._();
 
+  /// Máximo de canciones en la cola: colas de miles de temas hacen fallar el servicio de audio.
+  static const int maxQueue = 300;
+
   final equalizer = AndroidEqualizer();
   late final AudioPlayer player = AudioPlayer(
     audioPipeline: AudioPipeline(androidAudioEffects: [equalizer]),
@@ -23,10 +26,23 @@ class PlayerService {
     if (tracks.isEmpty) return;
     _userStarted = true;
     _lastRecorded = null;
+    var list = tracks;
+    var start = index.clamp(0, tracks.length - 1).toInt();
+    if (tracks.length > maxQueue) {
+      if (shuffle == true) {
+        list = (List<Track>.from(tracks)..shuffle()).take(maxQueue).toList();
+        start = 0;
+      } else {
+        final from = max(0, start - 50);
+        final to = min(tracks.length, from + maxQueue);
+        list = tracks.sublist(from, to);
+        start = start - from;
+      }
+    }
     try {
       await player.setAudioSources(
-        tracks.map((t) => t.toSource()).toList(),
-        initialIndex: index,
+        list.map((t) => t.toSource()).toList(),
+        initialIndex: start,
       );
       if (shuffle != null) {
         await player.setShuffleModeEnabled(shuffle);
@@ -108,6 +124,7 @@ class PlayerService {
     player.setVolume(_lastVol * master);
   }
 
+  int _errors = 0;
   bool _effectsStarted = false;
   bool _userStarted = false;
   double _lastVol = 1.0;
@@ -147,6 +164,23 @@ class PlayerService {
 
     s.addListener(applySkip);
     applySkip();
+
+    // Si una pista falla (archivo dañado o formato no soportado), salta a la siguiente
+    // en vez de detener toda la reproducción.
+    player.playbackEventStream.listen((_) {}, onError: (Object e, StackTrace st) async {
+      debugPrint('Error de reproducción: $e');
+      if (_errors >= 8) return;
+      _errors++;
+      try {
+        if (player.hasNext) {
+          await player.seekToNext();
+          unawaited(player.play());
+        }
+      } catch (_) {}
+    });
+    player.playerStateStream.listen((st) {
+      if (st.processingState == ProcessingState.ready) _errors = 0;
+    });
 
     // Historial y recordar la sesión
     player.currentIndexStream.listen((_) {
