@@ -8,6 +8,10 @@ import 'firebase_options.dart';
 /// si algo falla, la app abre igual y guarda un aviso en [warning].
 class AppInit {
   static final warning = ValueNotifier<String?>(null);
+
+  /// Estado del servicio de audio en segundo plano (se muestra en el diagnóstico).
+  static bool audioOk = false;
+  static String? audioError;
   static Future<void>? _f;
   static Future<void> run() => _f ??= _run();
 
@@ -17,12 +21,15 @@ class AppInit {
       await JustAudioBackground.init(
         androidNotificationChannelId: 'com.example.audio_player.channel.audio',
         androidNotificationChannelName: 'Reproducción de audio',
+        androidNotificationIcon: 'drawable/ic_stat_tole2',
         // El servicio sigue activo también en pausa: así Android no lo cierra
         // y la notificación con controles se mantiene.
         androidNotificationOngoing: false,
         androidStopForegroundOnPause: false,
       ).timeout(const Duration(seconds: 8));
+      audioOk = true;
     } catch (e) {
+      audioError = '$e';
       msgs.add('Audio en segundo plano no disponible: $e');
     }
 

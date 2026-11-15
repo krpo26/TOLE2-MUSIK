@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../app_init.dart';
 import '../services/settings_service.dart';
 import '../widgets/backup_card.dart';
 
@@ -41,6 +42,47 @@ class SettingsScreen extends StatelessWidget {
             IconButton(icon: const Icon(Icons.delete_outline), onPressed: clear),
         ]),
       );
+
+  Widget _diagRow(String label, bool ok, String detail) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(ok ? Icons.check_circle : Icons.error,
+              size: 18, color: ok ? Colors.green : Colors.redAccent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('$label\n$detail', style: const TextStyle(fontSize: 13)),
+          ),
+        ]),
+      );
+
+  Future<void> _diagnose(BuildContext context) async {
+    final notif = await Permission.notification.status;
+    final batt = await Permission.ignoreBatteryOptimizations.status;
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Diagnóstico de la notificación'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _diagRow('Servicio de audio en segundo plano', AppInit.audioOk,
+              AppInit.audioOk ? 'Iniciado correctamente' : 'ERROR: ${AppInit.audioError ?? "no se inició"}'),
+          _diagRow('Permiso de notificaciones', notif.isGranted,
+              notif.isGranted ? 'Permitido' : 'No permitido (actívalo en los ajustes de la app)'),
+          _diagRow('Ignorar ahorro de batería', batt.isGranted,
+              batt.isGranted ? 'Sí' : 'No (Android puede cortar la música)'),
+        ]),
+        actions: [
+          if (!notif.isGranted)
+            TextButton(onPressed: openAppSettings, child: const Text('Abrir ajustes')),
+          if (!batt.isGranted)
+            TextButton(
+                onPressed: () => Permission.ignoreBatteryOptimizations.request(),
+                child: const Text('Permitir batería')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +205,12 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Notificación con controles'),
             subtitle: const Text('Abre los ajustes de la app para permitir notificaciones'),
             onTap: openAppSettings,
+          ),
+          ListTile(
+            leading: const Icon(Icons.health_and_safety),
+            title: const Text('Diagnóstico de la notificación'),
+            subtitle: const Text('Comprueba por qué podría no aparecer la barra de controles'),
+            onTap: () => _diagnose(context),
           ),
           _section('Respaldo en la nube'),
           const BackupCard(),
